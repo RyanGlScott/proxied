@@ -179,7 +179,7 @@ alignmentProxied = proxied alignment
 -- GHC.Generics
 -------------------------------------------------------------------------------
 
-#if MIN_VERSION_base(4,9,0) >= 800
+#if MIN_VERSION_base(4,9,0)
 # define T_TYPE(t) (t :: k -> (* -> *) -> * -> *)
 #else
 # define T_TYPE(t) (t :: * -> (* -> *) -> * -> *)
