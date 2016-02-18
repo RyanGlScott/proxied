@@ -2,7 +2,7 @@
 {-# LANGUAGE KindSignatures #-}
 
 #if __GLASGOW_HASKELL__ >= 702
--- {-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe #-}
 #endif
 
 #if __GLASGOW_HASKELL__ >= 706

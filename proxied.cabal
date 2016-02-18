@@ -1,5 +1,5 @@
 name:                proxied
-version:             0.1
+version:             0.1.1
 synopsis:            Make functions consume Proxy instead of undefined
 description:         @proxied@ is a simple library that exports a function to
                      convert constant functions to ones that take a @proxy@
@@ -46,9 +46,9 @@ source-repository head
 
 library
   exposed-modules:     Data.Proxied
-  build-depends:       base             >= 4.3   && < 5
-                     , generic-deriving >= 1     && < 2
-                     , tagged           >= 0.4.4 && < 1
+  build-depends:       base             >= 4.3    && < 5
+                     , generic-deriving >= 1.10.1 && < 2
+                     , tagged           >= 0.4.4  && < 1
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
