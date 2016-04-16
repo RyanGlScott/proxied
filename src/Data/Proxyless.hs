@@ -1,10 +1,15 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 
-{-# OPTIONS_GHC -fno-warn-deprecations #-}
+{-# LANGUAGE ViewPatterns #-}
+
+{-# OPTIONS_GHC -Wno-deprecations #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-} -- Needed due to GHC Trac #11947
 
 {-|
 Module:      Data.Proxyless
@@ -14,17 +19,18 @@ Maintainer:  Ryan Scott
 Stability:   Provisional
 Portability: GHC
 
-Remove the 'Proxy' and 'undefined' arguments from functions with 'proxyless'
-and 'undefinedless', respectively, which produce functions that take type
-information via the @-XTypeApplications@ GHC extension.
+Remove the 'Proxy', 'Proxy#', and 'undefined' arguments from functions with
+'proxyless', 'proxyHashless', and 'undefinedless', respectively, which produce
+functions that take type information via GHC's @-XTypeApplications@ extension.
 
 This module is only available with GHC 8.0 or later.
 
 /Since: 0.2/
 -}
 module Data.Proxyless (
-      -- * 'proxied' and 'unproxied'
+      -- * 'proxyless', 'proxyHashless', and 'undefinedless'
       proxyless
+    , proxyHashless
     , undefinedless
       -- * Proxyless functions
       -- ** "Data.Bits"
@@ -32,11 +38,13 @@ module Data.Proxyless (
     , theIsSigned
     , theBitSizeMaybe
     , theFiniteBitSize
-{-
       -- ** "Data.Data"
     , theDataTypeOf
       -- ** "Data.Typeable"
+    , theTypeNatTypeRep
     , theTypeRep
+    , theTypeRep#
+    , theTypeSymbolTypeRep
       -- ** "Foreign.Storable"
     , theSizeOf
     , theAlignment
@@ -52,28 +60,58 @@ module Data.Proxyless (
     , theSelSourceUnpackedness
     , theSelSourceStrictness
     , theSelDecidedStrictness
+      -- ** "GHC.OverloadedLabels"
+    , theFromLabel
+      -- ** "GHC.TypeLits"
+    , theNatVal
+    , theNatVal'
+    , theSameNat
+    , theSameSymbol
+    , theSomeNat
+    , theSomeSymbol
+    , theSymbolVal
+    , theSymbolVal'
       -- ** "Prelude"
     , theFloatRadix
     , theFloatDigits
     , theFloatRange
       -- ** "Text.Printf"
     , theParseFormat
--}
     ) where
 
 import Data.Bits (Bits(..), FiniteBits(..))
 import Data.Data hiding (Fixity)
 import Data.Proxy (Proxy(..))
+import Data.Type.Equality ((:~:))
+import Data.Typeable.Internal (Typeable(..), typeNatTypeRep, typeSymbolTypeRep)
 
 import Foreign.Storable (Storable(..))
 
+import GHC.Exts (Proxy#, proxy#)
 import GHC.Generics
+import GHC.OverloadedLabels (IsLabel(..))
+import GHC.TypeLits
 
 import Text.Printf (PrintfArg(..), ModifierParser)
 
+-- | Converts a constant function that takes a 'Proxy' argument to one that
+-- doesn't require an argument.
+--
+-- /Since: 0.2/
 proxyless :: forall a b. (Proxy a -> b) -> b
 proxyless f = f Proxy
 
+-- | Converts a constant function that takes a 'Proxy#' argument to one that
+-- doesn't require an argument.
+--
+-- /Since: 0.2/
+proxyHashless :: forall a b. (Proxy# a -> b) -> b
+proxyHashless f = f proxy#
+
+-- | Converts a constant function that takes an 'undefined' argument to one that
+-- doesn't require an argument.
+--
+-- /Since: 0.2/
 undefinedless :: forall a b. (a -> b) -> b
 undefinedless f = f undefined
 
@@ -105,166 +143,220 @@ theBitSizeMaybe = undefinedless @a bitSizeMaybe
 theFiniteBitSize :: forall a. FiniteBits a => Int
 theFiniteBitSize = undefinedless @a finiteBitSize
 
-{-
 -------------------------------------------------------------------------------
 -- Data.Data
 -------------------------------------------------------------------------------
 
--- | @'dataTypeOfProxied' = 'proxied' 'dataTypeOf'@
+-- | @'theDataTypeOf' = 'undefinedless' 'dataTypeOf'@
 --
 -- /Since: 0.2/
-dataTypeOfProxied :: Data a => proxy a -> DataType
-dataTypeOfProxied = proxied dataTypeOf
+theDataTypeOf :: forall a. Data a => DataType
+theDataTypeOf = undefinedless @a dataTypeOf
 
 -------------------------------------------------------------------------------
 -- Data.Typeable
 -------------------------------------------------------------------------------
 
--- | @'typeOfProxied' = 'proxied' 'typeOf'@
+-- | @'theTypeNatTypeRep' = 'proxyHashless' 'typeNatTypeRep'@
 --
 -- /Since: 0.2/
-typeOfProxied :: Typeable a => proxy a -> TypeRep
-typeOfProxied = typeRep
+theTypeNatTypeRep :: forall a. KnownNat a => TypeRep
+theTypeNatTypeRep = proxyHashless @a typeNatTypeRep
+
+-- | @'theTypeRep' = 'proxyless' 'typeRep'@
+--
+-- /Since: 0.2/
+theTypeRep :: forall a. Typeable a => TypeRep
+theTypeRep = proxyless @a typeRep
+
+-- | @'theTypeRep#' = 'proxyHashless' 'typeRep#'@
+--
+-- /Since: 0.2/
+theTypeRep# :: forall a. Typeable a => TypeRep
+theTypeRep# = proxyHashless @a typeRep#
+
+-- | @'theTypeSymbolTypeRep' = 'proxyHashless' 'typeSymbolTypeRep'@
+--
+-- /Since: 0.2/
+theTypeSymbolTypeRep :: forall a. KnownSymbol a => TypeRep
+theTypeSymbolTypeRep = proxyHashless @a typeSymbolTypeRep
 
 -------------------------------------------------------------------------------
 -- Foreign.Storable
 -------------------------------------------------------------------------------
 
--- | @'sizeOfProxied' = 'proxied' 'sizeOf'@
+-- | @'theSizeOf' = 'undefinedless' 'sizeOf'@
 --
 -- /Since: 0.2/
-sizeOfProxied :: Storable a => proxy a -> Int
-sizeOfProxied = proxied sizeOf
+theSizeOf :: forall a. Storable a => Int
+theSizeOf = undefinedless @a sizeOf
 
--- | @'alignmentProxied' = 'proxied' 'alignment'@
+-- | @'theAlignment' = 'undefinedless' 'alignment'@
 --
 -- /Since: 0.2/
-alignmentProxied :: Storable a => proxy a -> Int
-alignmentProxied = proxied alignment
+theAlignment :: forall a. Storable a => Int
+theAlignment = undefinedless @a alignment
 
 -------------------------------------------------------------------------------
 -- GHC.Generics
 -------------------------------------------------------------------------------
 
-#define T_TYPE(t) (t :: k -> (* -> *) -> * -> *)
-
--- | @'datatypeNameProxied' = 'proxied' 'datatypeName'@
+-- | @'theDatatypeName' = 'datatypeName' 'undefined'@
 --
 -- /Since: 0.2/
-datatypeNameProxied :: Datatype d
-                    => proxy (T_TYPE(t) d f a)
-                    -> [Char]
-datatypeNameProxied = proxied datatypeName
+theDatatypeName :: forall d. Datatype d => [Char]
+theDatatypeName = datatypeName @d undefined
 
--- | @'moduleNameProxied' = 'proxied' 'moduleName'@
+-- | @'theModuleName' = 'moduleName' 'undefined'@
 --
 -- /Since: 0.2/
-moduleNameProxied :: Datatype d
-                  => proxy (T_TYPE(t) d f a)
-                  -> [Char]
-moduleNameProxied = proxied moduleName
+theModuleName :: forall d. Datatype d => [Char]
+theModuleName = moduleName @d undefined
 
--- | @'isNewtypeProxied' = 'proxied' 'isNewtype'@
+-- | @'theIsNewtype' = 'isNewtype' 'undefined'@
 --
 -- /Since: 0.2/
-isNewtypeProxied :: Datatype d
-                 => proxy (T_TYPE(t) d f a)
-                 -> Bool
-isNewtypeProxied = proxied isNewtype
+theIsNewtype :: forall d. Datatype d => Bool
+theIsNewtype = isNewtype @d undefined
 
--- | @'packageNameProxied' = 'proxied' 'packageName'@
+-- | @'thePackageName' = 'packageName' 'undefined'@
 --
 -- /Since: 0.2/
-packageNameProxied :: Datatype d
-                   => proxy (T_TYPE(t) d f a)
-                   -> [Char]
-packageNameProxied = proxied packageName
+thePackageName :: forall d. Datatype d => [Char]
+thePackageName = packageName @d undefined
 
--- | @'conNameProxied' = 'proxied' 'conName'@
+-- | @'theConName' = 'conName' 'undefined'@
 --
 -- /Since: 0.2/
-conNameProxied :: Constructor c
-               => proxy (T_TYPE(t) c f a)
-               -> [Char]
-conNameProxied = proxied conName
+theConName :: forall c. Constructor c => [Char]
+theConName = conName @c undefined
 
--- | @'conFixityProxied' = 'proxied' 'conFixity'@
+-- | @'theConFixity' = 'conFixity' 'undefined'@
 --
 -- /Since: 0.2/
-conFixityProxied :: Constructor c
-                 => proxy (T_TYPE(t) c f a)
-                 -> Fixity
-conFixityProxied = proxied conFixity
+theConFixity :: forall c. Constructor c => Fixity
+theConFixity = conFixity @c undefined
 
--- | @'conIsRecordProxied' = 'proxied' 'conIsRecord'@
+-- | @'theConIsRecord' = 'conIsRecord' 'undefined'@
 --
 -- /Since: 0.2/
-conIsRecordProxied :: Constructor c
-                   => proxy (T_TYPE(t) c f a)
-                   -> Bool
-conIsRecordProxied = proxied conIsRecord
+theConIsRecord :: forall c. Constructor c => Bool
+theConIsRecord = conIsRecord @c undefined
 
--- | @'selNameProxied' = 'proxied' 'selName'@
+-- | @'theSelName' = 'selName' 'undefined'@
 --
 -- /Since: 0.2/
-selNameProxied :: Selector s
-               => proxy (T_TYPE(t) s f a)
-               -> [Char]
-selNameProxied = proxied selName
+theSelName :: forall s. Selector s => [Char]
+theSelName = selName @s undefined
 
--- | @'selSourceUnpackednessProxied' = 'proxied' 'selSourceUnpackedness'@
+-- | @'theSelSourceUnpackedness' = 'selSourceUnpackedness' 'undefined'@
 --
 -- /Since: 0.2/
-selSourceUnpackednessProxied :: Selector s
-                             => proxy (T_TYPE(t) s f a)
-                             -> SourceUnpackedness
-selSourceUnpackednessProxied = proxied selSourceUnpackedness
+theSelSourceUnpackedness :: forall s. Selector s => SourceUnpackedness
+theSelSourceUnpackedness = selSourceUnpackedness @s undefined
 
--- | @'selSourceStrictnessProxied' = 'proxied' 'selSourceStrictness'@
+-- | @'theSelSourceStrictness' = 'selSourceStrictness' 'undefined'@
 --
 -- /Since: 0.2/
-selSourceStrictnessProxied :: Selector s
-                           => proxy (T_TYPE(t) s f a)
-                           -> SourceStrictness
-selSourceStrictnessProxied = proxied selSourceStrictness
+theSelSourceStrictness :: forall s. Selector s => SourceStrictness
+theSelSourceStrictness = selSourceStrictness @s undefined
 
--- | @'selDecidedStrictnessProxied' = 'proxied' 'selDecidedStrictness'@
+-- | @'theSelDecidedStrictness' = 'selDecidedStrictness' 'undefined'@
 --
 -- /Since: 0.2/
-selDecidedStrictnessProxied :: Selector s
-                            => proxy (T_TYPE(t) s f a)
-                            -> DecidedStrictness
-selDecidedStrictnessProxied = proxied selDecidedStrictness
+theSelDecidedStrictness :: forall s. Selector s => DecidedStrictness
+theSelDecidedStrictness = selDecidedStrictness @s undefined
+
+-------------------------------------------------------------------------------
+-- GHC.Generics
+-------------------------------------------------------------------------------
+
+-- | @'theFromLabel' = 'proxyHashless' 'fromLabel'@
+--
+-- /Since: 0.2/
+theFromLabel :: forall x a. IsLabel x a => a
+theFromLabel = proxyHashless @x fromLabel
+
+-------------------------------------------------------------------------------
+-- GHC.TypeLits
+-------------------------------------------------------------------------------
+
+-- | @'theNatVal' = 'proxyless' 'natVal'@
+--
+-- /Since: 0.2/
+theNatVal :: forall n. KnownNat n => Integer
+theNatVal = proxyless @n natVal
+
+-- | @`theNatVal'` = 'proxyHashless' `natVal'`@
+--
+-- /Since: 0.2/
+theNatVal' :: forall n. KnownNat n => Integer
+theNatVal' = proxyHashless @n natVal'
+
+-- | @'theSameNat' = 'sameNat' 'Proxy' 'Proxy'@
+--
+-- /Since: 0.2/
+theSameNat :: forall a b. (KnownNat a, KnownNat b) => Maybe (a :~: b)
+theSameNat = sameNat (Proxy @a) (Proxy @b)
+
+-- | @'theSameSymbol' = 'sameSymbol' 'Proxy' 'Proxy'@
+--
+-- /Since: 0.2/
+theSameSymbol :: forall a b. (KnownSymbol a, KnownSymbol b) => Maybe (a :~: b)
+theSameSymbol = sameSymbol (Proxy @a) (Proxy @b)
+
+-- | @'theSomeNat' = 'proxyless' 'SomeNat'@
+--
+-- /Since: 0.2/
+theSomeNat :: forall n. KnownNat n => SomeNat
+theSomeNat = proxyless @n SomeNat
+
+-- | @'theSomeSymbol' = 'proxyless' 'SomeSymbol'@
+--
+-- /Since: 0.2/
+theSomeSymbol :: forall n. KnownSymbol n => SomeSymbol
+theSomeSymbol = proxyless @n SomeSymbol
+
+-- | @'theSymbolVal' = 'proxyless' 'symbolVal'@
+--
+-- /Since: 0.2/
+theSymbolVal :: forall n. KnownSymbol n => String
+theSymbolVal = proxyless @n symbolVal
+
+-- | @`theSymbolVal'` = 'proxyHashless' `symbolVal'`@
+--
+-- /Since: 0.2/
+theSymbolVal' :: forall n. KnownSymbol n => String
+theSymbolVal' = proxyHashless @n symbolVal'
 
 -------------------------------------------------------------------------------
 -- Prelude
 -------------------------------------------------------------------------------
 
--- | @'floatRadixProxied' = 'proxied' 'floatRadix'@
+-- | @'theFloatRadix' = 'undefinedless' 'floatRadix'@
 --
 -- /Since: 0.2/
-floatRadixProxied :: RealFloat a => proxy a -> Integer
-floatRadixProxied = proxied floatRadix
+theFloatRadix :: forall a. RealFloat a => Integer
+theFloatRadix = undefinedless @a floatRadix
 
--- | @'floatDigitsProxied' = 'proxied' 'floatDigits'@
+-- | @'theFloatDigits' = 'undefinedless' 'floatDigits'@
 --
 -- /Since: 0.2/
-floatDigitsProxied :: RealFloat a => proxy a -> Int
-floatDigitsProxied = proxied floatDigits
+theFloatDigits :: forall a. RealFloat a => Int
+theFloatDigits = undefinedless @a floatDigits
 
--- | @'floatRangeProxied' = 'proxied' 'floatRange'@
+-- | @'theFloatRange' = 'undefinedless' 'floatRange'@
 --
 -- /Since: 0.2/
-floatRangeProxied :: RealFloat a => proxy a -> (Int, Int)
-floatRangeProxied = proxied floatRange
+theFloatRange :: forall a. RealFloat a => (Int, Int)
+theFloatRange = undefinedless @a floatRange
 
 -------------------------------------------------------------------------------
 -- Text.Printf
 -------------------------------------------------------------------------------
 
--- | @'parseFormatProxied' = 'proxied' 'parseFormat'@
+-- | @'theParseFormat' = 'undefinedless' 'parseFormat'@
 --
 -- /Since: 0.2/
-parseFormatProxied :: PrintfArg a => proxy a -> ModifierParser
-parseFormatProxied = proxied parseFormat
--}
+theParseFormat :: forall a. PrintfArg a => ModifierParser
+theParseFormat = undefinedless @a parseFormat

@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MagicHash #-}
 
 #if __GLASGOW_HASKELL__ >= 702
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Trustworthy #-}
 #endif
 
 #if __GLASGOW_HASKELL__ >= 706
@@ -26,6 +27,9 @@ Convert 'undefined'-consuming functions to 'Proxy'-consuming ones with 'proxied'
 module Data.Proxied (
       -- * 'proxied' and 'unproxied'
       proxied
+#if MIN_VERSION_base(4,7,0)
+    , proxyHashed
+#endif
     , unproxied
     , module Data.Proxy
       -- * Proxified functions
@@ -82,6 +86,7 @@ import Generics.Deriving.Instances ()
 
 #if MIN_VERSION_base(4,7,0)
 import Data.Bits (FiniteBits(..))
+import GHC.Exts (Proxy#)
 import Text.Printf (PrintfArg(..), ModifierParser)
 #endif
 
@@ -90,6 +95,15 @@ import Text.Printf (PrintfArg(..), ModifierParser)
 -- /Since: 0.1/
 proxied :: (a -> b) -> proxy a -> b
 proxied f _ = f undefined
+
+#if MIN_VERSION_base(4,7,0)
+-- | Converts a constant function to one that takes a @Proxy#@ argument.
+-- This function is only available with @base-4.7@ or later.
+--
+-- /Since: 0.2/
+proxyHashed :: (a -> b) -> Proxy# a -> b
+proxyHashed f _ = f undefined
+#endif
 
 -- | Converts a constant function that takes a 'Proxy' argument to one that
 -- doesn't require a @proxy@ argument. (I'm not sure why you'd want this,

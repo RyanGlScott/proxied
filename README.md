@@ -15,6 +15,8 @@
   https://tldrlegal.com/license/bsd-3-clause-license-%28revised%29
   "BSD 3-Clause License (Revised)"
 
-`proxied` is a simple library that exports a function to convert constant functions to ones that take a `proxy` value. This is useful for retrofiting typeclasses that have functions that return a constant value for any value of a particular type (but still need to consume some value, since one of the parameterized types must appear in a typeclass function). Often, these functions are given `undefined` as an argument, which might be considered poor design.
+`proxied` is a simple library that exports a function to convert constant functions to ones that take a `proxy` value in the `Data.Proxied`. This is useful for retrofiting typeclasses that have functions that return a constant value for any value of a particular type (but still need to consume some value, since one of the parameterized types must appear in a typeclass function). Often, these functions are given `undefined` as an argument, which might be considered poor design.
 
  `Proxy`, however, does not carry any of the error-throwing risks of `undefined`, so it is much more preferable to take `Proxy` as an argument to a constant function instead of `undefined`. Unfortunately, `Proxy` was included in `base` until GHC 7.8, so many of `base`'s typeclasses still contain constant functions that aren't amenable to passing `Proxy`. `proxied` addresses this issue by providing variants of those typeclass functions that take an explicit `proxy` value.
+
+This library also contains the "Data.Proxyless" module, which works in the opposite direction. That is, one can take functions which take `Proxy` (or `undefined`) as an argument and convert them to functions which take no arguments. This trick relies on the `-XTypeApplications` extension, so it is only available with GHC 8.0 or later.
