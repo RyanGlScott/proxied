@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE Trustworthy #-}
@@ -6,10 +7,11 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-{-# LANGUAGE ViewPatterns #-}
-
 {-# OPTIONS_GHC -Wno-deprecations #-}
+
+#if __GLASOW_HASKELL__ < 801
 {-# OPTIONS_GHC -Wno-type-defaults #-} -- Needed due to GHC Trac #11947
+#endif
 
 {-|
 Module:      Data.Proxyless
