@@ -9,7 +9,8 @@
 
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
-#if __GLASOW_HASKELL__ < 801
+#if __GLASGOW_HASKELL__ == 800 \
+    && __GLASGOW_HASKELL_PATCHLEVEL1__ == 1
 {-# OPTIONS_GHC -Wno-type-defaults #-} -- Needed due to GHC Trac #11947
 #endif
 
