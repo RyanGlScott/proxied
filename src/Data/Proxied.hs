@@ -81,8 +81,12 @@ import Data.Proxy
 
 import Foreign.Storable (Storable(..))
 
+#if MIN_VERSION_base(4,6,0)
+import GHC.Generics
+#else
 import Generics.Deriving.Base
 import Generics.Deriving.Instances ()
+#endif
 
 #if MIN_VERSION_base(4,7,0)
 import Data.Bits (FiniteBits(..))
