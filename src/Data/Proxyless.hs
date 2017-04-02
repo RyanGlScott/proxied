@@ -5,6 +5,7 @@
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeOperators #-}
 
 {-# OPTIONS_GHC -Wno-deprecations #-}
@@ -104,14 +105,14 @@ import Text.Printf (PrintfArg(..), ModifierParser)
 -- doesn't require an argument.
 --
 -- /Since: 0.2/
-proxyless :: forall a b. (Proxy a -> b) -> b
+proxyless :: forall k (a :: k) b. (Proxy a -> b) -> b
 proxyless f = f Proxy
 
 -- | Converts a constant function that takes a 'Proxy#' argument to one that
 -- doesn't require an argument.
 --
 -- /Since: 0.2/
-proxyHashless :: forall a b. (Proxy# a -> b) -> b
+proxyHashless :: forall k (a :: k) b. (Proxy# a -> b) -> b
 proxyHashless f = f proxy#
 
 -- | Converts a constant function that takes an 'undefined' argument to one that
@@ -166,21 +167,21 @@ theDataTypeOf = undefinedless @a dataTypeOf
 -- | @'theTypeNatTypeRep' = 'proxyHashless' 'typeNatTypeRep'@
 --
 -- Note that in @base-4.10@ and later, 'theTypeNatTypeRep' is simply a synonym
--- for @'theTypeRep' \@'Nat'@, as 'typeNatTypeRep' is no longer exported.
+-- for 'theTypeRep', as 'typeNatTypeRep' is no longer exported.
 --
 -- /Since: 0.2/
 theTypeNatTypeRep :: forall a. KnownNat a => TypeRep
 #if MIN_VERSION_base(4,10,0)
-theTypeNatTypeRep = theTypeRep @Nat
+theTypeNatTypeRep = theTypeRep @_ @a
 #else
-theTypeNatTypeRep = proxyHashless @a typeNatTypeRep
+theTypeNatTypeRep = proxyHashless @_ @a typeNatTypeRep
 #endif
 
 -- | @'theTypeRep' = 'proxyless' 'typeRep'@
 --
 -- /Since: 0.2/
-theTypeRep :: forall a. Typeable a => TypeRep
-theTypeRep = proxyless @a typeRep
+theTypeRep :: forall k (a :: k). Typeable a => TypeRep
+theTypeRep = proxyless @_ @a typeRep
 
 -- | @'theTypeRep#' = 'proxyHashless' 'typeRep#'@
 --
@@ -188,25 +189,24 @@ theTypeRep = proxyless @a typeRep
 -- 'theTypeRep', as 'typeRep#' is no longer exported.
 --
 -- /Since: 0.2/
-theTypeRep# :: forall a. Typeable a => TypeRep
+theTypeRep# :: forall k (a :: k). Typeable a => TypeRep
 #if MIN_VERSION_base(4,10,0)
-theTypeRep# = theTypeRep @a
+theTypeRep# = theTypeRep @k @a
 #else
-theTypeRep# = proxyHashless @a typeRep#
+theTypeRep# = proxyHashless @_ @a typeRep#
 #endif
 
 -- | @'theTypeSymbolTypeRep' = 'proxyHashless' 'typeSymbolTypeRep'@
 --
 -- Note that in @base-4.10@ and later, 'theTypeSymbolTypeRep' is simply a
--- synonym for @'theTypeRep' \@'Symbol'@, as 'typeSymbolTypeRep' is no longer
--- exported.
+-- synonym for 'theTypeRep', as 'typeSymbolTypeRep' is no longer exported.
 --
 -- /Since: 0.2/
 theTypeSymbolTypeRep :: forall a. KnownSymbol a => TypeRep
 #if MIN_VERSION_base(4,10,0)
-theTypeSymbolTypeRep = theTypeRep @Symbol
+theTypeSymbolTypeRep = theTypeRep @_ @a
 #else
-theTypeSymbolTypeRep = proxyHashless @a typeSymbolTypeRep
+theTypeSymbolTypeRep = proxyHashless @_ @a typeSymbolTypeRep
 #endif
 
 -------------------------------------------------------------------------------
@@ -232,67 +232,67 @@ theAlignment = undefinedless @a alignment
 -- | @'theDatatypeName' = 'datatypeName' 'undefined'@
 --
 -- /Since: 0.2/
-theDatatypeName :: forall d. Datatype d => [Char]
+theDatatypeName :: forall k (d :: k). Datatype d => [Char]
 theDatatypeName = datatypeName @d undefined
 
 -- | @'theModuleName' = 'moduleName' 'undefined'@
 --
 -- /Since: 0.2/
-theModuleName :: forall d. Datatype d => [Char]
+theModuleName :: forall k (d :: k). Datatype d => [Char]
 theModuleName = moduleName @d undefined
 
 -- | @'theIsNewtype' = 'isNewtype' 'undefined'@
 --
 -- /Since: 0.2/
-theIsNewtype :: forall d. Datatype d => Bool
+theIsNewtype :: forall k (d :: k). Datatype d => Bool
 theIsNewtype = isNewtype @d undefined
 
 -- | @'thePackageName' = 'packageName' 'undefined'@
 --
 -- /Since: 0.2/
-thePackageName :: forall d. Datatype d => [Char]
+thePackageName :: forall k (d :: k). Datatype d => [Char]
 thePackageName = packageName @d undefined
 
 -- | @'theConName' = 'conName' 'undefined'@
 --
 -- /Since: 0.2/
-theConName :: forall c. Constructor c => [Char]
+theConName :: forall k (c :: k). Constructor c => [Char]
 theConName = conName @c undefined
 
 -- | @'theConFixity' = 'conFixity' 'undefined'@
 --
 -- /Since: 0.2/
-theConFixity :: forall c. Constructor c => Fixity
+theConFixity :: forall k (c :: k). Constructor c => Fixity
 theConFixity = conFixity @c undefined
 
 -- | @'theConIsRecord' = 'conIsRecord' 'undefined'@
 --
 -- /Since: 0.2/
-theConIsRecord :: forall c. Constructor c => Bool
+theConIsRecord :: forall k (c :: k). Constructor c => Bool
 theConIsRecord = conIsRecord @c undefined
 
 -- | @'theSelName' = 'selName' 'undefined'@
 --
 -- /Since: 0.2/
-theSelName :: forall s. Selector s => [Char]
+theSelName :: forall k (s :: k). Selector s => [Char]
 theSelName = selName @s undefined
 
 -- | @'theSelSourceUnpackedness' = 'selSourceUnpackedness' 'undefined'@
 --
 -- /Since: 0.2/
-theSelSourceUnpackedness :: forall s. Selector s => SourceUnpackedness
+theSelSourceUnpackedness :: forall k (s :: k). Selector s => SourceUnpackedness
 theSelSourceUnpackedness = selSourceUnpackedness @s undefined
 
 -- | @'theSelSourceStrictness' = 'selSourceStrictness' 'undefined'@
 --
 -- /Since: 0.2/
-theSelSourceStrictness :: forall s. Selector s => SourceStrictness
+theSelSourceStrictness :: forall k (s :: k). Selector s => SourceStrictness
 theSelSourceStrictness = selSourceStrictness @s undefined
 
 -- | @'theSelDecidedStrictness' = 'selDecidedStrictness' 'undefined'@
 --
 -- /Since: 0.2/
-theSelDecidedStrictness :: forall s. Selector s => DecidedStrictness
+theSelDecidedStrictness :: forall k (s :: k). Selector s => DecidedStrictness
 theSelDecidedStrictness = selDecidedStrictness @s undefined
 
 -------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ theFromLabel :: forall x a. IsLabel x a => a
 #if MIN_VERSION_base(4,10,0)
 theFromLabel = fromLabel @x
 #else
-theFromLabel = proxyHashless @x fromLabel
+theFromLabel = proxyHashless @_ @x fromLabel
 #endif
 
 -------------------------------------------------------------------------------
@@ -320,13 +320,13 @@ theFromLabel = proxyHashless @x fromLabel
 --
 -- /Since: 0.2/
 theNatVal :: forall n. KnownNat n => Integer
-theNatVal = proxyless @n natVal
+theNatVal = proxyless @_ @n natVal
 
 -- | @`theNatVal'` = 'proxyHashless' `natVal'`@
 --
 -- /Since: 0.2/
 theNatVal' :: forall n. KnownNat n => Integer
-theNatVal' = proxyHashless @n natVal'
+theNatVal' = proxyHashless @_ @n natVal'
 
 -- | @'theSameNat' = 'sameNat' 'Proxy' 'Proxy'@
 --
@@ -344,25 +344,25 @@ theSameSymbol = sameSymbol (Proxy @a) (Proxy @b)
 --
 -- /Since: 0.2/
 theSomeNat :: forall n. KnownNat n => SomeNat
-theSomeNat = proxyless @n SomeNat
+theSomeNat = proxyless @_ @n SomeNat
 
 -- | @'theSomeSymbol' = 'proxyless' 'SomeSymbol'@
 --
 -- /Since: 0.2/
 theSomeSymbol :: forall n. KnownSymbol n => SomeSymbol
-theSomeSymbol = proxyless @n SomeSymbol
+theSomeSymbol = proxyless @_ @n SomeSymbol
 
 -- | @'theSymbolVal' = 'proxyless' 'symbolVal'@
 --
 -- /Since: 0.2/
 theSymbolVal :: forall n. KnownSymbol n => String
-theSymbolVal = proxyless @n symbolVal
+theSymbolVal = proxyless @_ @n symbolVal
 
 -- | @`theSymbolVal'` = 'proxyHashless' `symbolVal'`@
 --
 -- /Since: 0.2/
 theSymbolVal' :: forall n. KnownSymbol n => String
-theSymbolVal' = proxyHashless @n symbolVal'
+theSymbolVal' = proxyHashless @_ @n symbolVal'
 
 -------------------------------------------------------------------------------
 -- Prelude

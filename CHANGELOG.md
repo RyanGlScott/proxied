@@ -2,11 +2,11 @@
 * Update for GHC 8.2
   * Since `typeRep#`, `typeNatTypeRep`, and `typeSymbolTypeRep` are no longer
     exported from `base`, `theTypeRep#`, `theTypeNatTypeRep`, and
-    `theTypeSymbolTypeRep` are now synonyms for `theTypeRep`,
-    `theTypeRep @Nat`, and `theTypeRep @Symbol`, respectively
+    `theTypeSymbolTypeRep` are now synonyms for `theTypeRep`
   * Happily, the new type signature for `GHC.OverloadedLabels.fromLabel` is now
     exactly the same as `theFromLabel`, so the latter is now a synonym for the
     former
+* Use explicit kind variable binders in `Data.Proxyless`
 * Use explicit `forall`s in `Data.Proxied` for consistency
 
 ## 0.2
