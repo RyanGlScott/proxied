@@ -7,6 +7,7 @@
   * Happily, the new type signature for `GHC.OverloadedLabels.fromLabel` is now
     exactly the same as `theFromLabel`, so the latter is now a synonym for the
     former
+* Use explicit `forall`s in `Data.Proxied` for consistency
 
 ## 0.2
 * Added the `Data.Proxyless` module

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 #if __GLASGOW_HASKELL__ >= 702
 {-# LANGUAGE Trustworthy #-}
@@ -97,7 +98,7 @@ import Text.Printf (PrintfArg(..), ModifierParser)
 -- | Converts a constant function to one that takes a @proxy@ argument.
 --
 -- /Since: 0.1/
-proxied :: (a -> b) -> proxy a -> b
+proxied :: forall proxy a b. (a -> b) -> proxy a -> b
 proxied f _ = f undefined
 
 #if MIN_VERSION_base(4,7,0)
@@ -105,7 +106,7 @@ proxied f _ = f undefined
 -- This function is only available with @base-4.7@ or later.
 --
 -- /Since: 0.2/
-proxyHashed :: (a -> b) -> Proxy# a -> b
+proxyHashed :: forall a b. (a -> b) -> Proxy# a -> b
 proxyHashed f _ = f undefined
 #endif
 
@@ -114,7 +115,7 @@ proxyHashed f _ = f undefined
 -- but it's here for symmetry.)
 --
 -- /Since: 0.1/
-unproxied :: (Proxy a -> b) -> a -> b
+unproxied :: forall a b. (Proxy a -> b) -> a -> b
 unproxied f _ = f Proxy
 
 -------------------------------------------------------------------------------
@@ -124,13 +125,13 @@ unproxied f _ = f Proxy
 -- | @'bitSizeProxied' = 'proxied' 'bitSize'@
 --
 -- /Since: 0.1/
-bitSizeProxied :: Bits a => proxy a -> Int
+bitSizeProxied :: forall proxy a. Bits a => proxy a -> Int
 bitSizeProxied = proxied bitSize
 
 -- | @'isSignedProxied' = 'proxied' 'isSigned'@
 --
 -- /Since: 0.1/
-isSignedProxied :: Bits a => proxy a -> Bool
+isSignedProxied :: forall proxy a. Bits a => proxy a -> Bool
 isSignedProxied = proxied isSigned
 
 #if MIN_VERSION_base(4,7,0)
@@ -139,7 +140,7 @@ isSignedProxied = proxied isSigned
 -- This function is only available with @base-4.7@ or later.
 --
 -- /Since: 0.1/
-bitSizeMaybeProxied :: Bits a => proxy a -> Maybe Int
+bitSizeMaybeProxied :: forall proxy a. Bits a => proxy a -> Maybe Int
 bitSizeMaybeProxied = proxied bitSizeMaybe
 
 -- | @'finiteBitSizeProxied' = 'proxied' 'finiteBitSize'@
@@ -147,7 +148,7 @@ bitSizeMaybeProxied = proxied bitSizeMaybe
 -- This function is only available with @base-4.7@ or later.
 --
 -- /Since: 0.1/
-finiteBitSizeProxied :: FiniteBits a => proxy a -> Int
+finiteBitSizeProxied :: forall proxy a. FiniteBits a => proxy a -> Int
 finiteBitSizeProxied = proxied finiteBitSize
 #endif
 
@@ -158,7 +159,7 @@ finiteBitSizeProxied = proxied finiteBitSize
 -- | @'dataTypeOfProxied' = 'proxied' 'dataTypeOf'@
 --
 -- /Since: 0.1/
-dataTypeOfProxied :: Data a => proxy a -> DataType
+dataTypeOfProxied :: forall proxy a. Data a => proxy a -> DataType
 dataTypeOfProxied = proxied dataTypeOf
 
 -------------------------------------------------------------------------------
@@ -170,7 +171,13 @@ dataTypeOfProxied = proxied dataTypeOf
 -- On @base-4.7@ and later, this is identical to 'typeRep'.
 --
 -- /Since: 0.1/
-typeOfProxied :: Typeable a => proxy a -> TypeRep
+typeOfProxied :: forall proxy
+#if MIN_VERSION_base(4,7,0)
+                        (a :: k)
+#else
+                        a
+#endif
+                        . Typeable a => proxy a -> TypeRep
 #if MIN_VERSION_base(4,7,0)
 typeOfProxied = typeRep
 #else
@@ -184,29 +191,33 @@ typeOfProxied = proxied typeOf
 -- | @'sizeOfProxied' = 'proxied' 'sizeOf'@
 --
 -- /Since: 0.1/
-sizeOfProxied :: Storable a => proxy a -> Int
+sizeOfProxied :: forall proxy a. Storable a => proxy a -> Int
 sizeOfProxied = proxied sizeOf
 
 -- | @'alignmentProxied' = 'proxied' 'alignment'@
 --
 -- /Since: 0.1/
-alignmentProxied :: Storable a => proxy a -> Int
+alignmentProxied :: forall proxy a. Storable a => proxy a -> Int
 alignmentProxied = proxied alignment
 
 -------------------------------------------------------------------------------
 -- GHC.Generics
 -------------------------------------------------------------------------------
 
-#if MIN_VERSION_base(4,9,0)
-# define T_TYPE(t) (t :: k -> (* -> *) -> * -> *)
+#define GENERIC_FORALL(t,letter) forall proxy T_TYPE(t) letter f a
+
+#if MIN_VERSION_base(4,10,0)
+# define T_TYPE(t) (t :: k1 -> (k2 -> *) -> k2 -> *)
+#elif MIN_VERSION_base(4,9,0)
+# define T_TYPE(t) (t :: k1 -> (*  -> *) -> k2 -> *)
 #else
-# define T_TYPE(t) (t :: * -> (* -> *) -> * -> *)
+# define T_TYPE(t) (t :: *  -> (*  -> *) -> *  -> *)
 #endif
 
 -- | @'datatypeNameProxied' = 'proxied' 'datatypeName'@
 --
 -- /Since: 0.1/
-datatypeNameProxied :: Datatype d
+datatypeNameProxied :: GENERIC_FORALL(t,d). Datatype d
                     => proxy (T_TYPE(t) d f a)
                     -> [Char]
 datatypeNameProxied = proxied datatypeName
@@ -214,7 +225,7 @@ datatypeNameProxied = proxied datatypeName
 -- | @'moduleNameProxied' = 'proxied' 'moduleName'@
 --
 -- /Since: 0.1/
-moduleNameProxied :: Datatype d
+moduleNameProxied :: GENERIC_FORALL(t,d). Datatype d
                   => proxy (T_TYPE(t) d f a)
                   -> [Char]
 moduleNameProxied = proxied moduleName
@@ -225,7 +236,7 @@ moduleNameProxied = proxied moduleName
 -- This function is only available with @base-4.7@ or later.
 --
 -- /Since: 0.1/
-isNewtypeProxied :: Datatype d
+isNewtypeProxied :: GENERIC_FORALL(t,d). Datatype d
                  => proxy (T_TYPE(t) d f a)
                  -> Bool
 isNewtypeProxied = proxied isNewtype
@@ -237,7 +248,7 @@ isNewtypeProxied = proxied isNewtype
 -- This function is only avaiable with @base-4.9@ or later.
 --
 -- /Since: 0.1/
-packageNameProxied :: Datatype d
+packageNameProxied :: GENERIC_FORALL(t,d). Datatype d
                    => proxy (T_TYPE(t) d f a)
                    -> [Char]
 packageNameProxied = proxied packageName
@@ -246,7 +257,7 @@ packageNameProxied = proxied packageName
 -- | @'conNameProxied' = 'proxied' 'conName'@
 --
 -- /Since: 0.1/
-conNameProxied :: Constructor c
+conNameProxied :: GENERIC_FORALL(t,c). Constructor c
                => proxy (T_TYPE(t) c f a)
                -> [Char]
 conNameProxied = proxied conName
@@ -254,7 +265,7 @@ conNameProxied = proxied conName
 -- | @'conFixityProxied' = 'proxied' 'conFixity'@
 --
 -- /Since: 0.1/
-conFixityProxied :: Constructor c
+conFixityProxied :: GENERIC_FORALL(t,c). Constructor c
                  => proxy (T_TYPE(t) c f a)
                  -> Fixity
 conFixityProxied = proxied conFixity
@@ -262,7 +273,7 @@ conFixityProxied = proxied conFixity
 -- | @'conIsRecordProxied' = 'proxied' 'conIsRecord'@
 --
 -- /Since: 0.1/
-conIsRecordProxied :: Constructor c
+conIsRecordProxied :: GENERIC_FORALL(t,c). Constructor c
                    => proxy (T_TYPE(t) c f a)
                    -> Bool
 conIsRecordProxied = proxied conIsRecord
@@ -270,7 +281,7 @@ conIsRecordProxied = proxied conIsRecord
 -- | @'selNameProxied' = 'proxied' 'selName'@
 --
 -- /Since: 0.1/
-selNameProxied :: Selector s
+selNameProxied :: GENERIC_FORALL(t,s). Selector s
                => proxy (T_TYPE(t) s f a)
                -> [Char]
 selNameProxied = proxied selName
@@ -281,7 +292,7 @@ selNameProxied = proxied selName
 -- This function is only available with @base-4.9@ or later.
 --
 -- /Since: 0.1/
-selSourceUnpackednessProxied :: Selector s
+selSourceUnpackednessProxied :: GENERIC_FORALL(t,s). Selector s
                              => proxy (T_TYPE(t) s f a)
                              -> SourceUnpackedness
 selSourceUnpackednessProxied = proxied selSourceUnpackedness
@@ -291,7 +302,7 @@ selSourceUnpackednessProxied = proxied selSourceUnpackedness
 -- This function is only available with @base-4.9@ or later.
 --
 -- /Since: 0.1/
-selSourceStrictnessProxied :: Selector s
+selSourceStrictnessProxied :: GENERIC_FORALL(t,s). Selector s
                            => proxy (T_TYPE(t) s f a)
                            -> SourceStrictness
 selSourceStrictnessProxied = proxied selSourceStrictness
@@ -301,7 +312,7 @@ selSourceStrictnessProxied = proxied selSourceStrictness
 -- This function is only available with @base-4.9@ or later.
 --
 -- /Since: 0.1/
-selDecidedStrictnessProxied :: Selector s
+selDecidedStrictnessProxied :: GENERIC_FORALL(t,s). Selector s
                             => proxy (T_TYPE(t) s f a)
                             -> DecidedStrictness
 selDecidedStrictnessProxied = proxied selDecidedStrictness
@@ -314,19 +325,19 @@ selDecidedStrictnessProxied = proxied selDecidedStrictness
 -- | @'floatRadixProxied' = 'proxied' 'floatRadix'@
 --
 -- /Since: 0.1/
-floatRadixProxied :: RealFloat a => proxy a -> Integer
+floatRadixProxied :: forall proxy a. RealFloat a => proxy a -> Integer
 floatRadixProxied = proxied floatRadix
 
 -- | @'floatDigitsProxied' = 'proxied' 'floatDigits'@
 --
 -- /Since: 0.1/
-floatDigitsProxied :: RealFloat a => proxy a -> Int
+floatDigitsProxied :: forall proxy a. RealFloat a => proxy a -> Int
 floatDigitsProxied = proxied floatDigits
 
 -- | @'floatRangeProxied' = 'proxied' 'floatRange'@
 --
 -- /Since: 0.1/
-floatRangeProxied :: RealFloat a => proxy a -> (Int, Int)
+floatRangeProxied :: forall proxy a. RealFloat a => proxy a -> (Int, Int)
 floatRangeProxied = proxied floatRange
 
 -------------------------------------------------------------------------------
@@ -339,6 +350,6 @@ floatRangeProxied = proxied floatRange
 -- This function is only available with @base-4.7@ or later.
 --
 -- /Since: 0.1/
-parseFormatProxied :: PrintfArg a => proxy a -> ModifierParser
+parseFormatProxied :: forall proxy a. PrintfArg a => proxy a -> ModifierParser
 parseFormatProxied = proxied parseFormat
 #endif
