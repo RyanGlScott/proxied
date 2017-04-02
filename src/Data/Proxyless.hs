@@ -83,10 +83,17 @@ module Data.Proxyless (
     ) where
 
 import Data.Bits (Bits(..), FiniteBits(..))
-import Data.Data hiding (Fixity)
+import Data.Data (Data(dataTypeOf), DataType)
 import Data.Proxy (Proxy(..))
 import Data.Type.Equality ((:~:))
-import Data.Typeable.Internal (Typeable(..), typeNatTypeRep, typeSymbolTypeRep)
+import Data.Typeable (Typeable, TypeRep, typeRep)
+#if MIN_VERSION_base(4,10,0)
+import Data.Typeable (TyCon, typeRepTyCon)
+import Type.Reflection (SomeTypeRep(..))
+import Type.Reflection.Unsafe (KindRep(..), mkTrCon, mkTyCon)
+#else
+import Data.Typeable.Internal (typeRep#, typeNatTypeRep, typeSymbolTypeRep)
+#endif
 
 import Foreign.Storable (Storable(..))
 
@@ -174,15 +181,47 @@ theTypeRep = proxyless @a typeRep
 
 -- | @'theTypeRep#' = 'proxyHashless' 'typeRep#'@
 --
+-- Note that in @base-4.10@ and later, 'theTypeRep#' is simply a synonym for
+-- 'theTypeRep', as 'typeRep#' is no longer exported.
+--
 -- /Since: 0.2/
 theTypeRep# :: forall a. Typeable a => TypeRep
+#if MIN_VERSION_base(4,10,0)
+theTypeRep# = theTypeRep @a
+#else
 theTypeRep# = proxyHashless @a typeRep#
+#endif
 
 -- | @'theTypeSymbolTypeRep' = 'proxyHashless' 'typeSymbolTypeRep'@
 --
 -- /Since: 0.2/
 theTypeSymbolTypeRep :: forall a. KnownSymbol a => TypeRep
 theTypeSymbolTypeRep = proxyHashless @a typeSymbolTypeRep
+
+#if MIN_VERSION_base(4,10,0)
+-- | Used to make `'Typeable' instance for things of kind Nat
+typeNatTypeRep :: forall a. KnownNat a => Proxy# a -> TypeRep
+typeNatTypeRep p = typeLitTypeRep @Nat @a (show (natVal' p)) tcNat
+
+-- | Used to make `'Typeable' instance for things of kind Symbol
+typeSymbolTypeRep :: forall a. KnownSymbol a => Proxy# a -> TypeRep
+typeSymbolTypeRep p = typeLitTypeRep @Symbol @a (show (symbolVal' p)) tcSymbol
+
+mkTypeLitTyCon :: String -> TyCon -> TyCon
+mkTypeLitTyCon name kind_tycon
+  = mkTyCon "base" "GHC.TypeLits" name 0 kind
+  where kind = KindRepTyConApp kind_tycon []
+
+-- | An internal function, to make representations for type literals.
+typeLitTypeRep :: forall (a :: k). (Typeable k) => String -> TyCon -> TypeRep
+typeLitTypeRep nm kind_tycon = SomeTypeRep $ mkTrCon @k @a (mkTypeLitTyCon nm kind_tycon) []
+
+tcSymbol :: TyCon
+tcSymbol = typeRepTyCon (theTypeRep @Symbol)
+
+tcNat :: TyCon
+tcNat = typeRepTyCon (theTypeRep @Nat)
+#endif
 
 -------------------------------------------------------------------------------
 -- Foreign.Storable
@@ -274,11 +313,18 @@ theSelDecidedStrictness = selDecidedStrictness @s undefined
 -- GHC.Generics
 -------------------------------------------------------------------------------
 
--- | @'theFromLabel' = 'proxyHashless' 'fromLabel'@
+-- | In @base-4.10@ and later, this is simply a synonym for 'fromLabel'.
+-- In @base-4.9@, 'theFromLabel' is defined as:
+--
+-- @'theFromLabel' = 'proxyHashless' 'fromLabel'@
 --
 -- /Since: 0.2/
 theFromLabel :: forall x a. IsLabel x a => a
+#if MIN_VERSION_base(4,10,0)
+theFromLabel = fromLabel @x
+#else
 theFromLabel = proxyHashless @x fromLabel
+#endif
 
 -------------------------------------------------------------------------------
 -- GHC.TypeLits
