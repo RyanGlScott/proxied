@@ -87,11 +87,7 @@ import Data.Data (Data(dataTypeOf), DataType)
 import Data.Proxy (Proxy(..))
 import Data.Type.Equality ((:~:))
 import Data.Typeable (Typeable, TypeRep, typeRep)
-#if MIN_VERSION_base(4,10,0)
-import Data.Typeable (TyCon, typeRepTyCon)
-import Type.Reflection (SomeTypeRep(..))
-import Type.Reflection.Unsafe (KindRep(..), mkTrCon, mkTyCon)
-#else
+#if !(MIN_VERSION_base(4,10,0))
 import Data.Typeable.Internal (typeRep#, typeNatTypeRep, typeSymbolTypeRep)
 #endif
 
@@ -169,9 +165,16 @@ theDataTypeOf = undefinedless @a dataTypeOf
 
 -- | @'theTypeNatTypeRep' = 'proxyHashless' 'typeNatTypeRep'@
 --
+-- Note that in @base-4.10@ and later, 'theTypeNatTypeRep' is simply a synonym
+-- for @'theTypeRep' \@'Nat'@, as 'typeNatTypeRep' is no longer exported.
+--
 -- /Since: 0.2/
 theTypeNatTypeRep :: forall a. KnownNat a => TypeRep
+#if MIN_VERSION_base(4,10,0)
+theTypeNatTypeRep = theTypeRep @Nat
+#else
 theTypeNatTypeRep = proxyHashless @a typeNatTypeRep
+#endif
 
 -- | @'theTypeRep' = 'proxyless' 'typeRep'@
 --
@@ -194,33 +197,16 @@ theTypeRep# = proxyHashless @a typeRep#
 
 -- | @'theTypeSymbolTypeRep' = 'proxyHashless' 'typeSymbolTypeRep'@
 --
+-- Note that in @base-4.10@ and later, 'theTypeSymbolTypeRep' is simply a
+-- synonym for @'theTypeRep' \@'Symbol'@, as 'typeSymbolTypeRep' is no longer
+-- exported.
+--
 -- /Since: 0.2/
 theTypeSymbolTypeRep :: forall a. KnownSymbol a => TypeRep
-theTypeSymbolTypeRep = proxyHashless @a typeSymbolTypeRep
-
 #if MIN_VERSION_base(4,10,0)
--- | Used to make `'Typeable' instance for things of kind Nat
-typeNatTypeRep :: forall a. KnownNat a => Proxy# a -> TypeRep
-typeNatTypeRep p = typeLitTypeRep @Nat @a (show (natVal' p)) tcNat
-
--- | Used to make `'Typeable' instance for things of kind Symbol
-typeSymbolTypeRep :: forall a. KnownSymbol a => Proxy# a -> TypeRep
-typeSymbolTypeRep p = typeLitTypeRep @Symbol @a (show (symbolVal' p)) tcSymbol
-
-mkTypeLitTyCon :: String -> TyCon -> TyCon
-mkTypeLitTyCon name kind_tycon
-  = mkTyCon "base" "GHC.TypeLits" name 0 kind
-  where kind = KindRepTyConApp kind_tycon []
-
--- | An internal function, to make representations for type literals.
-typeLitTypeRep :: forall (a :: k). (Typeable k) => String -> TyCon -> TypeRep
-typeLitTypeRep nm kind_tycon = SomeTypeRep $ mkTrCon @k @a (mkTypeLitTyCon nm kind_tycon) []
-
-tcSymbol :: TyCon
-tcSymbol = typeRepTyCon (theTypeRep @Symbol)
-
-tcNat :: TyCon
-tcNat = typeRepTyCon (theTypeRep @Nat)
+theTypeSymbolTypeRep = theTypeRep @Symbol
+#else
+theTypeSymbolTypeRep = proxyHashless @a typeSymbolTypeRep
 #endif
 
 -------------------------------------------------------------------------------

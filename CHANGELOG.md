@@ -1,7 +1,9 @@
 ## next
 * Update for GHC 8.2
-  * Since `typeRep#` is no longer exported from `base`, `theTypeRep#` is now a
-    synonym for `theTypeRep`
+  * Since `typeRep#`, `typeNatTypeRep`, and `typeSymbolTypeRep` are no longer
+    exported from `base`, `theTypeRep#`, `theTypeNatTypeRep`, and
+    `theTypeSymbolTypeRep` are now synonyms for `theTypeRep`,
+    `theTypeRep @Nat`, and `theTypeRep @Symbol`, respectively
   * Happily, the new type signature for `GHC.OverloadedLabels.fromLabel` is now
     exactly the same as `theFromLabel`, so the latter is now a synonym for the
     former
