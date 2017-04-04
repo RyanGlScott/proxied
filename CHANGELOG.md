@@ -1,4 +1,4 @@
-## next
+## 0.3
 * Update for GHC 8.2
   * Since `typeRep#`, `typeNatTypeRep`, and `typeSymbolTypeRep` are no longer
     exported from `base`, `theTypeRep#`, `theTypeNatTypeRep`, and
