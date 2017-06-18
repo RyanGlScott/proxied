@@ -15,7 +15,7 @@ description:         @proxied@ is a simple library that exports a function to
                      error-throwing risks of @undefined@, so it is much more
                      preferable to take @Proxy@ as an argument to a constant
                      function instead of @undefined@. Unfortunately, @Proxy@
-                     was included in @base@ until GHC 7.8, so many of @base@'s
+                     wasn't included in @base@ until GHC 7.8, so many of @base@'s
                      typeclasses still contain constant functions that aren't
                      amenable to passing @Proxy@. @proxied@ addresses this
                      issue by providing variants of those typeclass functions
