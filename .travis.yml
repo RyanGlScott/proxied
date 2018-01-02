@@ -72,8 +72,8 @@ before_install:
 install:
   - cabal --version
   - echo "$(${HC} --version) [$(${HC} --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - BENCH=${BENCH---enable-benchmarks}
-  - TEST=${TEST---enable-tests}
+  - BENCH=${BENCH---disable-benchmarks}
+  - TEST=${TEST---disable-tests}
   - HADDOCK=${HADDOCK-true}
   - INSTALLED=${INSTALLED-false}
   - GHCHEAD=${GHCHEAD-false}
