@@ -11,6 +11,10 @@
 {-# LANGUAGE PolyKinds #-}
 #endif
 
+#if __GLASGOW_HASKELL__ >= 800 && __GLASGOW_HASKELL__ < 806
+{-# LANGUAGE TypeInType #-}
+#endif
+
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 {-|
@@ -78,6 +82,9 @@ module Data.Proxied (
 
 import Data.Bits (Bits(..))
 import Data.Data hiding (Fixity)
+#if MIN_VERSION_base(4,9,0)
+import Data.Kind (Type)
+#endif
 import Data.Proxy
 
 import Foreign.Storable (Storable(..))
@@ -171,7 +178,11 @@ dataTypeOfProxied = proxied dataTypeOf
 -- On @base-4.7@ and later, this is identical to 'typeRep'.
 --
 -- /Since: 0.1/
-typeOfProxied :: forall proxy
+typeOfProxied :: forall
+#if MIN_VERSION_base(4,9,0)
+                        k
+#endif
+                        proxy
 #if MIN_VERSION_base(4,7,0)
                         (a :: k)
 #else
@@ -204,14 +215,20 @@ alignmentProxied = proxied alignment
 -- GHC.Generics
 -------------------------------------------------------------------------------
 
-#define GENERIC_FORALL(t,letter) forall proxy T_TYPE(t) letter f a
+#define GENERIC_FORALL(t,letter) forall K_KINDS proxy T_TYPE(t) letter f a
+
+#if MIN_VERSION_base(4,9,0)
+# define K_KINDS k1 k2
+#else
+# define K_KINDS
+#endif
 
 #if MIN_VERSION_base(4,10,0)
-# define T_TYPE(t) (t :: k1 -> (k2 -> *) -> k2 -> *)
+# define T_TYPE(t) (t :: k1 -> (k2   -> Type) -> k2 -> Type)
 #elif MIN_VERSION_base(4,9,0)
-# define T_TYPE(t) (t :: k1 -> (*  -> *) -> k2 -> *)
+# define T_TYPE(t) (t :: k1 -> (Type -> Type) -> k2 -> Type)
 #else
-# define T_TYPE(t) (t :: *  -> (*  -> *) -> *  -> *)
+# define T_TYPE(t) (t :: *  -> (*    -> *)    -> *  -> *)
 #endif
 
 -- | @'datatypeNameProxied' = 'proxied' 'datatypeName'@

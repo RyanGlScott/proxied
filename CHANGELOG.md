@@ -1,3 +1,6 @@
+### next [????.??.??]
+* Make the build warning-free under `-Wcompat`.
+
 ## 0.3
 * Update for GHC 8.2
   * Since `typeRep#`, `typeNatTypeRep`, and `typeSymbolTypeRep` are no longer
