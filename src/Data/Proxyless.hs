@@ -296,7 +296,7 @@ theSelDecidedStrictness :: forall k (s :: k). Selector s => DecidedStrictness
 theSelDecidedStrictness = selDecidedStrictness @s undefined
 
 -------------------------------------------------------------------------------
--- GHC.Generics
+-- GHC.OverloadedLabels
 -------------------------------------------------------------------------------
 
 -- | In @base-4.10@ and later, this is simply a synonym for 'fromLabel'.
