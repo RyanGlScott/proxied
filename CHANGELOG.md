@@ -1,4 +1,4 @@
-### next [????.??.??]
+### 0.3.1 [2019.02.20]
 * Make the build warning-free under `-Wcompat`.
 
 ## 0.3
