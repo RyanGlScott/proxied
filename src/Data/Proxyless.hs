@@ -5,8 +5,11 @@
 {-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeOperators #-}
+
+#if __GLASGOW_HASKELL__ < 806
+{-# LANGUAGE TypeInType #-}
+#endif
 
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
