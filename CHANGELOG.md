@@ -1,3 +1,7 @@
+### next [????.??.??]
+* Add `Data.Proxyless.RequiredTypeArguments`, a variant of `Data.Proxyless`
+  which uses `RequiredTypeArguments` instead of `TypeApplications`.
+
 ### 0.3.1 [2019.02.20]
 * Make the build warning-free under `-Wcompat`.
 

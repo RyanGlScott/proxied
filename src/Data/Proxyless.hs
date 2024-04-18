@@ -30,6 +30,9 @@ Remove the 'Proxy', 'Proxy#', and 'undefined' arguments from functions with
 'proxyless', 'proxyHashless', and 'undefinedless', respectively, which produce
 functions that take type information via GHC's @-XTypeApplications@ extension.
 
+See also "Data.Proxyless.RequiredTypeArguments" for a version of this module
+that leverages @-XRequiredTypeArguments@ instead of @-XTypeApplications@.
+
 This module is only available with GHC 8.0 or later.
 
 /Since: 0.2/
