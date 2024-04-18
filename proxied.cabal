@@ -27,6 +27,11 @@ description:         @proxied@ is a simple library that exports a function to
                      argument and convert them to functions which take no
                      arguments. This trick relies on the @-XTypeApplications@
                      extension, so it is only available with GHC 8.0 or later.
+                     This library also offers
+                     "Data.Proxyless.RequiredTypeArguments", a variant of
+                     "Data.Proxyless" that uses @-XRequiredTypeArguments@ to
+                     make type arguments explicit, which is only available with
+                     GHC 9.10 or later.
 homepage:            https://github.com/RyanGlScott/proxied
 bug-reports:         https://github.com/RyanGlScott/proxied/issues
 license:             BSD3
@@ -61,6 +66,8 @@ library
   exposed-modules:     Data.Proxied
   if impl(ghc >= 8.0)
     exposed-modules:   Data.Proxyless
+  if impl(ghc >= 9.10)
+    exposed-modules:   Data.Proxyless.RequiredTypeArguments
   build-depends:       base             >= 4.3    && < 5
   if !impl(ghc >= 7.6)
     build-depends:     generic-deriving >= 1.10.1 && < 2
