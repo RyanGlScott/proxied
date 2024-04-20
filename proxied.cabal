@@ -1,5 +1,5 @@
 name:                proxied
-version:             0.3.1
+version:             0.3.2
 synopsis:            Make functions consume Proxy instead of undefined
 description:         @proxied@ is a simple library that exports a function to
                      convert constant functions to ones that take a @proxy@

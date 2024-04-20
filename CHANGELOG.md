@@ -1,4 +1,4 @@
-### next [????.??.??]
+### 0.3.2 [2024.04.20]
 * Add `Data.Proxyless.RequiredTypeArguments`, a variant of `Data.Proxyless`
   which uses `RequiredTypeArguments` instead of `TypeApplications`.
 
